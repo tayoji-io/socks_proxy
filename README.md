@@ -1,6 +1,6 @@
-# socks_proxy
+# flutter_socks_proxy
 
-**socks_proxy** is a dart package, HTTP/Socks4/Socks5 proxy
+**flutter_socks_proxy** is a dart package, HTTP/Socks4/Socks5 proxy
 
 ## Usage
 

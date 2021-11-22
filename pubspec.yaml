@@ -1,7 +1,7 @@
-name: socks_proxy
-description: A new Flutter package project.
+name: flutter_socks_proxy
+description: flutter_socks_proxy is a dart package, HTTP/Socks4/Socks5 proxy
 version: 0.0.1
-homepage:
+homepage: https://github.com/tayoji-io/socks_proxy
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
