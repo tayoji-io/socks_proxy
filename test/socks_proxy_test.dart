@@ -7,6 +7,7 @@ import 'package:flutter_socks_proxy/socks_proxy.dart';
 
 void main() {
   test('Global test', () async {
+    // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
     SocksProxy.initProxy(proxy: 'SOCKS5 192.168.31.180:7891');
     await HttpClient()
         .getUrl(Uri.parse('https://www.google.com'))
@@ -26,6 +27,7 @@ void main() {
   });
 
   test('Independent test', () async {
+    // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
     final http = createProxyHttpClient()
       ..findProxy = (url) => 'SOCKS5 192.168.31.180:7891';
     await http

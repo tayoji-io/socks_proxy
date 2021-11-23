@@ -13,7 +13,7 @@ import 'package:socks_proxy/socks_proxy.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // proxy -> "SOCKS5/SOCKS4/PROXY username:password@hots:port;" or "DIRECT"
+  // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
   SocksProxy.initProxy(proxy: 'SOCKS5 192.168.31.180:7891');
     await HttpClient()
         .getUrl(Uri.parse('https://www.google.com'))
@@ -41,7 +41,7 @@ import 'dart:io';
 import 'package:socks_proxy/socks_proxy.dart';
 
  void requset() async {
-  // proxy -> "SOCKS5/SOCKS4/PROXY username:password@hots:port;" or "DIRECT"
+  // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
   final http = createProxyHttpClient()
     ..findProxy = (url) => 'SOCKS5 192.168.31.180:7891';
   await http
