@@ -16,7 +16,7 @@ void main() async {
   // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
   SocksProxy.initProxy(proxy: 'SOCKS5 192.168.31.180:7891');
     await HttpClient()
-        .getUrl(Uri.parse('https://www.google.com'))
+        .getUrl(Uri.parse('https://raw.githubusercontent.com/tayoji-io/socks_proxy/master/README.md'))
         .then((value) {
           return value.close();
         })
@@ -45,7 +45,7 @@ import 'package:socks_proxy/socks_proxy.dart';
   final http = createProxyHttpClient()
     ..findProxy = (url) => 'SOCKS5 192.168.31.180:7891';
   await http
-      .getUrl(Uri.parse('https://www.google.com'))
+      .getUrl(Uri.parse('https://raw.githubusercontent.com/tayoji-io/socks_proxy/master/README.md'))
       .then((value) {
         return value.close();
       })
