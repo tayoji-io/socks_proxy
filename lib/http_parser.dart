@@ -7,18 +7,18 @@ part of 'socks_proxy.dart';
 // Global constants.
 class _Const {
   // Bytes for "HTTP".
-  static const HTTP = const [72, 84, 84, 80];
+  static const HTTP = [72, 84, 84, 80];
   // Bytes for "HTTP/1.".
-  static const HTTP1DOT = const [72, 84, 84, 80, 47, 49, 46];
+  static const HTTP1DOT = [72, 84, 84, 80, 47, 49, 46];
   // Bytes for "HTTP/1.0".
-  static const HTTP10 = const [72, 84, 84, 80, 47, 49, 46, 48];
+  static const HTTP10 = [72, 84, 84, 80, 47, 49, 46, 48];
   // Bytes for "HTTP/1.1".
-  static const HTTP11 = const [72, 84, 84, 80, 47, 49, 46, 49];
+  static const HTTP11 = [72, 84, 84, 80, 47, 49, 46, 49];
 
   static const bool T = true;
   static const bool F = false;
   // Loopup-map for the following characters: '()<>@,;:\\"/[]?={} \t'.
-  static const SEPARATOR_MAP = const [
+  static const SEPARATOR_MAP = [
     F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, //
     F, F, F, F, F, F, F, F, T, F, T, F, F, F, F, F, T, T, F, F, T, F, F, T, //
     F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, F, F, F, F, F, F, F, //
@@ -39,15 +39,12 @@ class _CharCode {
   static const int LF = 10;
   static const int CR = 13;
   static const int SP = 32;
-  static const int AMPERSAND = 38;
   static const int COMMA = 44;
-  static const int DASH = 45;
   static const int SLASH = 47;
   static const int ZERO = 48;
   static const int ONE = 49;
   static const int COLON = 58;
   static const int SEMI_COLON = 59;
-  static const int EQUAL = 61;
 }
 
 // States of the HTTP parser state machine.
@@ -99,10 +96,17 @@ class _MessageType {
   static const int RESPONSE = 0;
 }
 
+/// The _HttpDetachedStreamSubscription takes a subscription and some extra data,
+/// and makes it possible to "inject" the data in from of other data events
+/// from the subscription.
+///
+/// It does so by overriding pause/resume, so that once the
+/// _HttpDetachedStreamSubscription is resumed, it'll deliver the data before
+/// resuming the underlying subscription.
 class _HttpDetachedStreamSubscription implements StreamSubscription<Uint8List> {
-  StreamSubscription<Uint8List> _subscription;
+  final StreamSubscription<Uint8List> _subscription;
   Uint8List? _injectData;
-  Function? _userOnData;
+  void Function(Uint8List data)? _userOnData;
   bool _isCanceled = false;
   bool _scheduled = false;
   int _pauseCount = 1;
@@ -121,12 +125,12 @@ class _HttpDetachedStreamSubscription implements StreamSubscription<Uint8List> {
     return _subscription.cancel();
   }
 
-  void onData(void handleData(Uint8List data)?) {
+  void onData(void Function(Uint8List data)? handleData) {
     _userOnData = handleData;
     _subscription.onData(handleData);
   }
 
-  void onDone(void handleDone()?) {
+  void onDone(void Function()? handleDone) {
     _subscription.onDone(handleDone);
   }
 
@@ -161,7 +165,7 @@ class _HttpDetachedStreamSubscription implements StreamSubscription<Uint8List> {
     scheduleMicrotask(() {
       _scheduled = false;
       if (_pauseCount > 0 || _isCanceled) return;
-      var data = _injectData;
+      var data = _injectData!;
       _injectData = null;
       // To ensure that 'subscription.isPaused' is false, we resume the
       // subscription here. This is fine as potential events are delayed.
@@ -177,8 +181,8 @@ class _HttpDetachedIncoming extends Stream<Uint8List> {
 
   _HttpDetachedIncoming(this.subscription, this.bufferedData);
 
-  StreamSubscription<Uint8List> listen(void onData(Uint8List event)?,
-      {Function? onError, void onDone()?, bool? cancelOnError}) {
+  StreamSubscription<Uint8List> listen(void Function(Uint8List event)? onData,
+      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     var subscription = this.subscription;
     if (subscription != null) {
       subscription
@@ -188,17 +192,34 @@ class _HttpDetachedIncoming extends Stream<Uint8List> {
       if (bufferedData == null) {
         return subscription..resume();
       }
-      return new _HttpDetachedStreamSubscription(
-          subscription, bufferedData, onData)
+      return _HttpDetachedStreamSubscription(subscription, bufferedData, onData)
         ..resume();
     } else {
       // TODO(26379): add test for this branch.
-      return new Stream<Uint8List>.fromIterable([bufferedData!]).listen(onData,
+      return Stream<Uint8List>.fromIterable([bufferedData!]).listen(onData,
           onError: onError, onDone: onDone, cancelOnError: cancelOnError);
     }
   }
 }
 
+/// HTTP parser which parses the data stream given to [consume].
+///
+/// If an HTTP parser error occurs, the parser will signal an error to either
+/// the current _HttpIncoming or the _parser itself.
+///
+/// The connection upgrades (e.g. switching from HTTP/1.1 to the
+/// WebSocket protocol) is handled in a special way. If connection
+/// upgrade is specified in the headers, then on the callback to
+/// [:responseStart:] the [:upgrade:] property on the [:HttpParser:]
+/// object will be [:true:] indicating that from now on the protocol is
+/// not HTTP anymore and no more callbacks will happen, that is
+/// [:dataReceived:] and [:dataEnd:] are not called in this case as
+/// there is no more HTTP data. After the upgrade the method
+/// [:readUnparsedData:] can be used to read any remaining bytes in the
+/// HTTP parser which are part of the protocol the connection is
+/// upgrading to. These bytes cannot be processed by the HTTP parser
+/// and should be handled according to whatever protocol is being
+/// upgraded to.
 class _HttpParser extends Stream<_HttpIncoming> {
   // State.
   bool _parserCalled = false;
@@ -236,7 +257,7 @@ class _HttpParser extends Stream<_HttpIncoming> {
   _HttpHeaders? _headers;
 
   // The limit for parsing chunk size
-  int _chunkSizeLimit = 0x7FFFFFFF;
+  static const _chunkSizeLimit = 0x7FFFFFFF;
 
   // The current incoming connection.
   _HttpIncoming? _incoming;
@@ -252,15 +273,15 @@ class _HttpParser extends Stream<_HttpIncoming> {
   StreamSubscription? _socks5StateSubscription;
 
   factory _HttpParser.requestParser() {
-    return new _HttpParser._(true);
+    return _HttpParser._(true);
   }
 
   factory _HttpParser.responseParser() {
-    return new _HttpParser._(false);
+    return _HttpParser._(false);
   }
 
   _HttpParser._(this._requestParser)
-      : _controller = new StreamController<_HttpIncoming>(sync: true) {
+      : _controller = StreamController<_HttpIncoming>(sync: true) {
     _controller
       ..onListen = () {
         _paused = false;
@@ -279,8 +300,11 @@ class _HttpParser extends Stream<_HttpIncoming> {
     _reset();
   }
 
-  StreamSubscription<_HttpIncoming> listen(void onData(_HttpIncoming event)?,
-      {Function? onError, void onDone()?, bool? cancelOnError}) {
+  StreamSubscription<_HttpIncoming> listen(
+      void Function(_HttpIncoming event)? onData,
+      {Function? onError,
+      void Function()? onDone,
+      bool? cancelOnError}) {
     return _controller.stream.listen(onData,
         onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
@@ -348,11 +372,11 @@ class _HttpParser extends Stream<_HttpIncoming> {
     }
     var incoming = _createIncoming(_transferLength);
     if (_requestParser) {
-      incoming.method = new String.fromCharCodes(_method);
-      incoming.uri = Uri.parse(new String.fromCharCodes(_uriOrReasonPhrase));
+      incoming.method = String.fromCharCodes(_method);
+      incoming.uri = Uri.parse(String.fromCharCodes(_uriOrReasonPhrase));
     } else {
       incoming.statusCode = _statusCode;
-      incoming.reasonPhrase = new String.fromCharCodes(_uriOrReasonPhrase);
+      incoming.reasonPhrase = String.fromCharCodes(_uriOrReasonPhrase);
     }
     _method.clear();
     _uriOrReasonPhrase.clear();
@@ -384,6 +408,19 @@ class _HttpParser extends Stream<_HttpIncoming> {
     _controller.add(incoming);
     return true;
   }
+
+  // From RFC 2616.
+  // generic-message = start-line
+  //                   *(message-header CRLF)
+  //                   CRLF
+  //                   [ message-body ]
+  // start-line      = Request-Line | Status-Line
+  // Request-Line    = Method SP Request-URI SP HTTP-Version CRLF
+  // Status-Line     = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+  // message-header  = field-name ":" [ field-value ]
+  //
+  // Per section 19.3 "Tolerant Applications" CRLF treats LF as a terminator
+  // and leading CR is ignored. Use of standalone CR is not allowed.
 
   void _doParse() {
     assert(!_parserCalled);
@@ -984,7 +1021,7 @@ class _HttpParser extends Stream<_HttpIncoming> {
   _HttpDetachedIncoming detachIncoming() {
     // Simulate detached by marking as upgraded.
     _state = _State.UPGRADED;
-    return new _HttpDetachedIncoming(_socketSubscription, readUnparsedData());
+    return _HttpDetachedIncoming(_socketSubscription, readUnparsedData());
   }
 
   Uint8List? readUnparsedData() {
@@ -1130,7 +1167,6 @@ class _HttpParser extends Stream<_HttpIncoming> {
 
       default:
         throw UnsupportedError("Unexpected state: $_state");
-        break;
     }
     throw HttpException(
         "$method exceeds the $_headerTotalSizeLimit size limit");
@@ -1140,10 +1176,9 @@ class _HttpParser extends Stream<_HttpIncoming> {
     assert(_incoming == null);
     assert(_bodyController == null);
     assert(!_bodyPaused);
-    var controller =
-        _bodyController = new StreamController<Uint8List>(sync: true);
-    var incoming = _incoming =
-        new _HttpIncoming(_headers!, transferLength, controller.stream);
+    var controller = _bodyController = StreamController<Uint8List>(sync: true);
+    var incoming =
+        _incoming = _HttpIncoming(_headers!, transferLength, controller.stream);
     controller
       ..onListen = () {
         if (incoming != _incoming) return;

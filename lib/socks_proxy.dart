@@ -1,60 +1,30 @@
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
-import 'dart:isolate';
-import 'dart:math';
-import 'dart:io'
+import 'dart:collection'
     show
-        HttpException,
-        HttpClient,
-        HttpOverrides,
-        SecurityContext,
-        HttpSession,
-        HttpHeaders,
-        SecureSocket,
-        X509Certificate,
-        RedirectInfo,
-        HttpStatus,
-        HttpConnectionInfo,
-        HttpClientResponse,
-        HttpClientResponseCompressionState,
-        RedirectException,
-        gzip,
-        HttpDate,
-        ContentType,
-        Cookie,
-        HeaderValue,
-        IOSink,
-        HttpResponse,
-        Socket,
-        HttpClientRequest,
-        ZLibEncoder,
-        SocketException,
-        TlsException,
-        ConnectionTask,
-        InternetAddressType,
-        SocketOption,
-        HttpClientCredentials,
-        InternetAddress,
-        HttpServer,
-        SecureServerSocket,
-        HttpRequest,
-        ServerSocket,
-        HandshakeException,
-        HttpConnectionsInfo,
-        RawSocketOption,
-        HttpClientBasicCredentials,
-        HttpClientDigestCredentials,
-        Platform,
-        IOException;
+        HashMap,
+        HashSet,
+        ListQueue,
+        LinkedList,
+        LinkedListEntry,
+        UnmodifiableMapView;
+import 'dart:convert';
+import 'dart:developer' hide log;
+import 'dart:io';
+import 'dart:isolate' show Isolate;
+import 'dart:math';
 import 'dart:typed_data';
-import 'dart:developer';
 
 part 'crypto.dart';
+
 part 'http_headers.dart';
 part 'http_impl.dart';
 part 'http_parser.dart';
 part 'http_session.dart';
+
 part 'socks.dart';
 
 class SocksProxy {
