@@ -11,7 +11,7 @@ void main() {
     SocksProxy.initProxy(proxy: 'SOCKS5 192.168.31.180:8889');
     await HttpClient()
         .getUrl(Uri.parse(
-            'https://api.wmdb.tv/api/v1/top?type=Imdb&skip=0&limit=20&lang=Cn'))
+            'https://raw.githubusercontent.com/tayoji-io/socks_proxy/master/README.md'))
         .then((value) {
           return value.close();
         })
