@@ -2,6 +2,13 @@
 
 **flutter_socks_proxy** is a dart package, HTTP/Socks4/Socks5 proxy
 
+## Flutter version scope
+
+| flutter_socks_proxy  | Flutter |
+| ------------- | ------------- |
+| 0.0.1 | < 3.0 |
+| 0.0.2 | >= 3.0 |
+
 ## Usage
 
 ### Use global 
