@@ -2306,7 +2306,8 @@ class _HttpClientConnection {
           key, secureSocket, request._httpClient, true);
     });
   }
-   Future<_HttpClientConnection> createSocksProxyTunnel(
+
+  Future<_HttpClientConnection> createSocksProxyTunnel(
       String host,
       int port,
       _Proxy proxy,
@@ -2338,6 +2339,7 @@ class _HttpClientConnection {
         _SocksAuthMethod.NoAuth.value,
         _SocksAuthMethod.UsernamePassword.value
       ]);
+
       await _httpParser._socksStateController.stream.firstWhere((a) {
         if (a == _SocksState.AuthStarted) {
           if (username.length > 255 || username.length > 255) {
@@ -2389,7 +2391,6 @@ class _HttpClientConnection {
       return _HttpClientConnection(key, socket, _httpClient, true);
     });
   }
-
 
   HttpConnectionInfo? get connectionInfo => _HttpConnectionInfo.create(_socket);
 

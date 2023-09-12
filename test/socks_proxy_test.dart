@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:flutter_socks_proxy/socks_proxy.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Global test', () async {
     // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
     SocksProxy.initProxy(proxy: 'SOCKS5 192.168.31.180:8889');
+
     await HttpClient()
-        .getUrl(Uri.parse(
-            'https://raw.githubusercontent.com/tayoji-io/socks_proxy/master/README.md'))
+        .getUrl(Uri.parse('https://www.baidu.com'))
         .then((value) {
           return value.close();
         })

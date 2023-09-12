@@ -16,7 +16,7 @@
 ```dart
 import 'dart:convert';
 import 'dart:io';
-import 'package:socks_proxy/socks_proxy.dart';
+import 'package:flutter_socks_proxy/socks_proxy.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +45,8 @@ void main() async {
 ``` dart
 import 'dart:convert';
 import 'dart:io';
-import 'package:socks_proxy/socks_proxy.dart';
+import 'package:flutter_socks_proxy/socks_proxy.dart';
+
 
  void requset() async {
   // proxy -> "SOCKS5/SOCKS4/PROXY username:password@host:port;" or "DIRECT"
